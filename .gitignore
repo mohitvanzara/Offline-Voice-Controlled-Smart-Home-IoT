@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+*.db
+
+venv/
+.env
+
+.vscode/
+
+models/vosk-model-small-en-us-0.15/
+
+.DS_Store
