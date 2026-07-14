@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Home Dashboard</title>
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: system-ui, sans-serif; background: #f5f5f5; color: #222; min-height: 100vh; }
+
+  /* Login */
+  #login-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+  .login-card { background: #fff; border: 1px solid #e0e0e0; border-radius: 12px; padding: 2rem; width: 320px; }
+  .login-card h2 { font-size: 20px; font-weight: 500; margin-bottom: 1.5rem; }
+  .login-card input { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; margin-bottom: 12px; outline: none; }
+  .login-card input:focus { border-color: #4f46e5; }
+  .btn-primary { width: 100%; padding: 10px; background: #4f46e5; color: #fff; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; font-weight: 500; }
+  .btn-primary:hover { background: #4338ca; }
+  .error-msg { color: #dc2626; font-size: 13px; margin-top: 8px; text-align: center; }
+
+  /* Dashboard */
+  #dashboard { display: none; }
+  .topbar { background: #fff; border-bottom: 1px solid #e0e0e0; padding: 0 2rem; height: 56px; display: flex; align-items: center; justify-content: space-between; }
+  .topbar h1 { font-size: 16px; font-weight: 500; }
+  .topbar-right { display: flex; align-items: center; gap: 12px; font-size: 13px; color: #666; }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; display: inline-block; }
+  .status-dot.sleep { background: #9ca3af; }
+  .logout-btn { background: none; border: 1px solid #e0e0e0; border-radius: 6px; padding: 4px 10px; font-size: 13px; cursor: pointer; color: #666; }
+
+  .main { padding: 2rem; max-width: 1000px; margin: 0 auto; }
+  .section-title { font-size: 14px; font-weight: 500; color: #666; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  /* Device Cards */
+  .devices-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; margin-bottom: 2rem; }
+  .device-card { background: #fff; border: 1px solid #e0e0e0; border-radius: 12px; padding: 1.25rem; }
+  .device-card.on { border-color: #4f46e5; background: #f5f3ff; }
+  .device-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+  .device-name { font-size: 15px; font-weight: 500; text-transform: capitalize; }
+  .device-pin { font-size: 12px; color: #9ca3af; }
+  .device-status { font-size: 13px; font-weight: 500; color: #9ca3af; margin-bottom: 1rem; }
+  .device-status.on { color: #4f46e5; }
+  .toggle-btn { width: 100%; padding: 8px; border-radius: 8px; border: 1px solid #e0e0e0; background: #f9f9f9; font-size: 13px; cursor: pointer; font-weight: 500; transition: all 0.15s; }
+  .toggle-btn.on { background: #4f46e5; color: #fff; border-color: #4f46e5; }
+  .toggle-btn:hover { opacity: 0.85; }
+  .delete-btn { width: 100%; padding: 6px; border-radius: 6px; border: 1px solid #fee2e2; background: #fff; color: #dc2626; font-size: 12px; cursor: pointer; margin-top: 6px; }
+
+  /* Add Device */
+  .add-card { background: #fff; border: 1px dashed #d1d5db; border-radius: 12px; padding: 1.25rem; }
+  .add-card h3 { font-size: 14px; font-weight: 500; margin-bottom: 1rem; }
+  .form-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .form-row input { flex: 1; min-width: 120px; padding: 8px 10px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 13px; outline: none; }
+  .form-row input:focus { border-color: #4f46e5; }
+  .btn-add { padding: 8px 16px; background: #4f46e5; color: #fff; border: none; border-radius: 8px; font-size: 13px; cursor: pointer; white-space: nowrap; }
+
+  /* Commands */
+  .commands-table { width: 100%; background: #fff; border: 1px solid #e0e0e0; border-radius: 12px; overflow: hidden; margin-bottom: 1.5rem; }
+  .commands-table table { width: 100%; border-collapse: collapse; }
+  .commands-table th { background: #f9f9f9; padding: 10px 16px; text-align: left; font-size: 12px; color: #666; font-weight: 500; border-bottom: 1px solid #e0e0e0; }
+  .commands-table td { padding: 10px 16px; font-size: 13px; border-bottom: 1px solid #f3f4f6; }
+  .commands-table tr:last-child td { border-bottom: none; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; }
+  .badge.on  { background: #dcfce7; color: #15803d; }
+  .badge.off { background: #fee2e2; color: #dc2626; }
+  .del-cmd { background: none; border: none; color: #dc2626; cursor: pointer; font-size: 12px; }
+
+  .add-cmd-form { background: #fff; border: 1px dashed #d1d5db; border-radius: 12px; padding: 1.25rem; }
+  .add-cmd-form h3 { font-size: 14px; font-weight: 500; margin-bottom: 1rem; }
+  .add-cmd-form select { padding: 8px 10px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 13px; outline: none; background: #fff; }
+
+  @media (max-width: 600px) {
+    .main { padding: 1rem; }
+    .form-row { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── Login Screen ── -->
+<div id="login-screen">
+  <div class="login-card">
+    <h2>Smart Home</h2>
+    <input type="text"     id="username" placeholder="Username" value="admin">
+    <input type="password" id="password" placeholder="Password" value="admin123">
+    <button class="btn-primary" onclick="login()">Login</button>
+    <p class="error-msg" id="login-error"></p>
+  </div>
+</div>
+
+<!-- ── Dashboard ── -->
+<div id="dashboard">
+  <div class="topbar">
+    <h1>Smart Home Dashboard</h1>
+    <div class="topbar-right">
+      <span class="status-dot" id="system-dot"></span>
+      <span id="system-status-text">Waiting...</span>
+      <span id="logged-user"></span>
+      <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <!-- Devices -->
+    <p class="section-title">Devices</p>
+    <div class="devices-grid" id="devices-grid"></div>
+
+    <!-- Add Device -->
+    <div class="add-card" style="margin-bottom:2rem">
+      <h3>Add new device</h3>
+      <div class="form-row">
+        <input type="text"   id="new-device-name" placeholder="Device name (e.g. bedroom light)">
+        <input type="number" id="new-device-pin"  placeholder="GPIO pin (e.g. 28)">
+        <button class="btn-add" onclick="addDevice()">Add Device</button>
+      </div>
+    </div>
+
+    <!-- Commands -->
+    <p class="section-title">Voice Commands</p>
+    <div class="commands-table">
+      <table>
+        <thead>
+          <tr>
+            <th>Phrase</th>
+            <th>Device</th>
+            <th>Action</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="commands-tbody"></tbody>
+      </table>
+    </div>
+
+    <!-- Add Command -->
+    <div class="add-cmd-form">
+      <h3>Add new voice command</h3>
+      <div class="form-row">
+        <input type="text" id="new-cmd-phrase" placeholder='Phrase (e.g. "bedroom on")'>
+        <select id="new-cmd-device"></select>
+        <select id="new-cmd-action">
+          <option value="on">on</option>
+          <option value="off">off</option>
+        </select>
+        <button class="btn-add" onclick="addCommand()">Add Command</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const API = "http://" + location.hostname + ":5000/api";
+  let token = localStorage.getItem("jwt_token");
+  let socket = null;
+
+  // ── Auth ──
+  async function login() {
+    const username = document.getElementById("username").value;
+    const password = document.getElementById("password").value;
+    const res = await fetch(API + "/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      token = data.token;
+      localStorage.setItem("jwt_token", token);
+      document.getElementById("logged-user").textContent = data.username;
+      showDashboard();
+    } else {
+      document.getElementById("login-error").textContent = data.error;
+    }
+  }
+
+  function logout() {
+    localStorage.removeItem("jwt_token");
+    token = null;
+    if (socket) socket.disconnect();
+    document.getElementById("dashboard").style.display = "none";
+    document.getElementById("login-screen").style.display = "flex";
+  }
+
+  function authHeaders() {
+    return { "Content-Type": "application/json", "Authorization": "Bearer " + token };
+  }
+
+  // ── Dashboard ──
+  function showDashboard() {
+    document.getElementById("login-screen").style.display = "none";
+    document.getElementById("dashboard").style.display = "block";
+    loadDevices();
+    loadCommands();
+    connectSocket();
+  }
+
+  // ── SocketIO ──
+  function connectSocket() {
+    socket = io("http://" + location.hostname + ":5000");
+
+    socket.on("all_devices", (devices) => {
+      renderDevices(devices);
+    });
+
+    socket.on("device_update", (data) => {
+      updateDeviceCard(data.device, data.status);
+    });
+
+    socket.on("system_status", (data) => {
+      const dot  = document.getElementById("system-dot");
+      const text = document.getElementById("system-status-text");
+      if (data.status === "awake") {
+        dot.className = "status-dot";
+        text.textContent = "Listening...";
+      } else {
+        dot.className = "status-dot sleep";
+        text.textContent = "Sleeping";
+      }
+    });
+  }
+
+  // ── Devices ──
+  async function loadDevices() {
+    const res     = await fetch(API + "/devices", { headers: authHeaders() });
+    const devices = await res.json();
+    renderDevices(devices);
+    populateDeviceSelect(devices);
+  }
+
+  function renderDevices(devices) {
+    const grid = document.getElementById("devices-grid");
+    grid.innerHTML = "";
+    devices.forEach(d => {
+      const isOn = d.status === "on";
+      const card = document.createElement("div");
+      card.className   = "device-card" + (isOn ? " on" : "");
+      card.id          = "card-" + d.name;
+      card.innerHTML   = `
+        <div class="device-header">
+          <span class="device-name">${d.name}</span>
+          <span class="device-pin">GPIO ${d.gpio_pin}</span>
+        </div>
+        <div class="device-status ${isOn ? 'on' : ''}" id="status-${d.name}">
+          ${isOn ? "ON" : "OFF"}
+        </div>
+        <button class="toggle-btn ${isOn ? 'on' : ''}" id="btn-${d.name}"
+          onclick="controlDevice(${d.id}, '${d.name}', '${isOn ? 'off' : 'on'}')">
+          Turn ${isOn ? "Off" : "On"}
+        </button>
+        <button class="delete-btn" onclick="deleteDevice(${d.id})">Remove</button>
+      `;
+      grid.appendChild(card);
+    });
+  }
+
+  function updateDeviceCard(name, status) {
+    const isOn   = status === "on";
+    const card   = document.getElementById("card-" + name);
+    const stat   = document.getElementById("status-" + name);
+    const btn    = document.getElementById("btn-" + name);
+    if (!card) { loadDevices(); return; }
+    card.className       = "device-card" + (isOn ? " on" : "");
+    stat.className       = "device-status" + (isOn ? " on" : "");
+    stat.textContent     = isOn ? "ON" : "OFF";
+    btn.className        = "toggle-btn" + (isOn ? " on" : "");
+    btn.textContent      = "Turn " + (isOn ? "Off" : "On");
+    btn.setAttribute("onclick", `controlDevice(${btn.dataset.id}, '${name}', '${isOn ? 'off' : 'on'}')`);
+  }
+
+  async function controlDevice(id, name, action) {
+    await fetch(`${API}/devices/${id}/control`, {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({ action })
+    });
+  }
+
+  async function addDevice() {
+    const name = document.getElementById("new-device-name").value.trim();
+    const pin  = parseInt(document.getElementById("new-device-pin").value);
+    if (!name || !pin) return alert("Name and GPIO pin required");
+    const res = await fetch(API + "/devices", {
+      method: "POST", headers: authHeaders(),
+      body: JSON.stringify({ name, gpio_pin: pin })
+    });
+    const data = await res.json();
+    if (res.ok) { loadDevices(); loadCommands(); }
+    else alert(data.error);
+  }
+
+  async function deleteDevice(id) {
+    if (!confirm("Delete this device and its commands?")) return;
+    await fetch(`${API}/devices/${id}`, { method: "DELETE", headers: authHeaders() });
+    loadDevices();
+    loadCommands();
+  }
+
+  function populateDeviceSelect(devices) {
+    const sel = document.getElementById("new-cmd-device");
+    sel.innerHTML = devices.map(d => `<option value="${d.id}">${d.name}</option>`).join("");
+  }
+
+  // ── Commands ──
+  async function loadCommands() {
+    const res      = await fetch(API + "/commands", { headers: authHeaders() });
+    const commands = await res.json();
+    const tbody    = document.getElementById("commands-tbody");
+    tbody.innerHTML = commands.map(c => `
+      <tr>
+        <td>${c.phrase}</td>
+        <td style="text-transform:capitalize">${c.device_name}</td>
+        <td><span class="badge ${c.action}">${c.action}</span></td>
+        <td><button class="del-cmd" onclick="deleteCommand(${c.id})">Remove</button></td>
+      </tr>
+    `).join("");
+  }
+
+  async function addCommand() {
+    const phrase    = document.getElementById("new-cmd-phrase").value.trim();
+    const device_id = parseInt(document.getElementById("new-cmd-device").value);
+    const action    = document.getElementById("new-cmd-action").value;
+    if (!phrase) return alert("Phrase required");
+    const res = await fetch(API + "/commands", {
+      method: "POST", headers: authHeaders(),
+      body: JSON.stringify({ phrase, device_id, action })
+    });
+    const data = await res.json();
+    if (res.ok) { loadCommands(); document.getElementById("new-cmd-phrase").value = ""; }
+    else alert(data.error);
+  }
+
+  async function deleteCommand(id) {
+    await fetch(`${API}/commands/${id}`, { method: "DELETE", headers: authHeaders() });
+    loadCommands();
+  }
+
+  // ── Auto login if token exists ──
+  if (token) showDashboard();
+</script>
+</body>
+</html>
