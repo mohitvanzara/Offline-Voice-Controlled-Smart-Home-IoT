@@ -1,10 +1,10 @@
-﻿# 🏠 Offline Voice Controlled Smart Home IoT
+﻿#  Offline Voice Controlled Smart Home IoT
 
 An AI-powered **Offline Voice Controlled Smart Home Automation System** built using **Raspberry Pi 3**, **ESP32**, **Vosk Speech Recognition**, and **MQTT**. The system processes voice commands locally without requiring an internet connection, providing a fast, secure, and privacy-focused smart home solution.
 
 ---
 
-## 📌 Project Overview
+##  Project Overview
 
 This project enables users to control home appliances through voice commands without relying on cloud-based speech recognition services.
 
@@ -12,16 +12,16 @@ The Raspberry Pi continuously listens for voice commands through an **INMP441 di
 
 A web-based dashboard allows users to monitor and control the devices in real time over the local network.
 
-### ✨ Features
+###  Features
 
-- 🎤 Offline Speech Recognition using Vosk
-- 🏠 Voice Controlled Smart Home Automation
-- 📡 MQTT Based Communication
-- ⚡ ESP32 Device Control
-- 🖥 Real-Time Dashboard Monitoring
-- 🔒 No Internet Required
-- 🚀 Fast Response Time
-- 💻 Raspberry Pi Based Processing
+-  Offline Speech Recognition using Vosk
+-  Voice Controlled Smart Home Automation
+-  MQTT Based Communication
+-  ESP32 Device Control
+-  Real-Time Dashboard Monitoring
+-  No Internet Required
+-  Fast Response Time
+-  Raspberry Pi Based Processing
 
 ---
 
@@ -41,7 +41,7 @@ A web-based dashboard allows users to monitor and control the devices in real ti
 
 ---
 
-# ⚙ Circuit Diagram
+#  Circuit Diagram
 
 <p align="center">
 <img src="docs/Circuit.jpg" width="850">
@@ -49,7 +49,7 @@ A web-based dashboard allows users to monitor and control the devices in real ti
 
 ---
 
-# ⚙ How the System Works
+#  How the System Works
 
 1. User speaks a predefined voice command.
 2. INMP441 microphone captures the audio.
@@ -72,7 +72,7 @@ A web-based dashboard allows users to monitor and control the devices in real ti
 
 ---
 
-# 📂 Project Structure
+#  Project Structure
 
 ```text
 Offline-Voice-Controlled-Smart-Home-IoT
@@ -179,7 +179,7 @@ No additional download is required.
 
 ---
 
-# ▶ Running the Project
+#  Running the Project
 
 Run using Makefile
 
@@ -223,7 +223,7 @@ python speech/speech_recognition.py
 
 ---
 
-# 📡 ESP32 Serial Monitor
+#  ESP32 Serial Monitor
 
 <p align="center">
 <img src="docs/Esp serial terminal output.png" width="750">
@@ -254,7 +254,7 @@ By combining Raspberry Pi 3, ESP32, MQTT, and the Vosk Offline Speech Recognitio
 
 ---
 
-# 📄 License
+#  License
 
 This project is licensed under the **MIT License**.
 
