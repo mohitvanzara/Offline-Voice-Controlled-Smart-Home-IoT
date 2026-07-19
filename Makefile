@@ -1,7 +1,3 @@
-# ===========================================
-# Offline Voice Controlled Smart Home
-# Raspberry Pi Makefile
-# ===========================================
 
 PYTHON      := python3
 PIP         := pip3
