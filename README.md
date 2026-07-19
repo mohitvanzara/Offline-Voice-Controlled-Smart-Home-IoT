@@ -93,9 +93,7 @@ Offline-Voice-Controlled-Smart-Home-IoT
 │   └── Raspberry pi 3 terminal output - speech-recognition run.jpg
 │
 ├── firmware
-│   ├── esp32_voice_controller.ino
-│   └── esp32_voice_controller
-│       └── esp32_voice_controller.ino
+│   ├── esp32_voice_controller.ino
 │
 ├── frontend
 │   └── dashboard.html
